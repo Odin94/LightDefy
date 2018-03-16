@@ -34,16 +34,12 @@ class HomeActivity : AppCompatActivity() {
             val view = inflater.inflate(R.layout.lightbulb_list_elem, null)
 
             view.name.text = lightbulb.name
-            view.lightSwitch.text = if (lightbulb.on) "Turn Off" else "Turn On"
-
-            val bulbImage = if (lightbulb.connected) {
-                if (lightbulb.on) R.drawable.light_on else R.drawable.light_off
-            } else {
-                R.drawable.light_disconnected
+            view.lightSwitch.setOnClickListener{
+                lightbulb.flickLightSwitch(view)
             }
-            view.bulb_image.setImageResource(bulbImage)
+            lightbulb.updateState(view)
 
-            return view;
+            return view
         }
 
         override fun getItem(position: Int) = lightbulbs[position]

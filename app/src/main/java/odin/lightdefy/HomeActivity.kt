@@ -1,6 +1,7 @@
 package odin.lightdefy
 
 import android.content.Context
+import android.graphics.Paint
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.LayoutInflater
@@ -8,7 +9,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ListView
+import android.widget.TextView
 import kotlinx.android.synthetic.main.lightbulb_list_elem.view.*
+
 
 class HomeActivity : AppCompatActivity() {
 
@@ -33,8 +36,15 @@ class HomeActivity : AppCompatActivity() {
             val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
             val view = inflater.inflate(R.layout.lightbulb_list_elem, null)
 
-            view.name.text = lightbulb.name
-            view.lightSwitch.setOnClickListener{
+            val nameTextView = view.findViewById(R.id.name) as TextView
+            nameTextView.paintFlags = nameTextView.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+
+            view.name.setOnLongClickListener {
+                getNameChangeDialog(context, lightbulb, view).show()
+                true
+            }
+
+            view.lightSwitch.setOnClickListener {
                 lightbulb.flickLightSwitch(view)
             }
             lightbulb.updateState(view)

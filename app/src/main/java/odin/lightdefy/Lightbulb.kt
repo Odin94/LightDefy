@@ -5,7 +5,7 @@ import kotlinx.android.synthetic.main.lightbulb_list_elem.view.*
 
 // TODO: put image assets in here? Maybe a map of status -> image?
 
-class Lightbulb(val name: String, var on: Boolean, var connected: Boolean) {
+class Lightbulb(var name: String, var on: Boolean, var connected: Boolean) {
     companion object {
         // Pair(onOff, connected)
         val imageMap: Map<Pair<Boolean, Boolean>, Int> = mapOf(
@@ -28,5 +28,6 @@ class Lightbulb(val name: String, var on: Boolean, var connected: Boolean) {
         view.lightSwitch.text = if (on) "Turn Off" else "Turn On"
         val bulbImage = Lightbulb.imageMap[Pair(on, connected)]
         view.bulb_image.setImageResource(bulbImage!!)
+        view.name.text = name
     }
 }

@@ -11,16 +11,18 @@ fun getNameChangeDialog(context: Context, lightbulb: Lightbulb, lightbulbView: V
 
     // set up input
     val input = EditText(context)
+    input.setText(lightbulb.name)
+
     builder.setView(input)
-            .setTitle("Change name of ${lightbulb.name}")
-            .setPositiveButton("OK", { dialog, _ ->
+            .setTitle(context.getString(R.string.change_name_of) + lightbulb.name)
+            .setPositiveButton(context.getString(R.string.ok), { dialog, _ ->
                 dialog.dismiss()
                 if (input.text.toString().trim().isNotEmpty()) {
                     lightbulb.name = input.text.toString()
-                    lightbulb.updateState(lightbulbView)
+                    lightbulb.updateState(context, lightbulbView)
                 }
             })
-            .setNegativeButton("Cancel", { dialog, _ ->
+            .setNegativeButton(context.getString(R.string.cancel), { dialog, _ ->
                 dialog.cancel()
             })
 

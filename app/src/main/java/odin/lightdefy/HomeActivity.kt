@@ -45,9 +45,9 @@ class HomeActivity : AppCompatActivity() {
             }
 
             view.lightSwitch.setOnClickListener {
-                lightbulb.flickLightSwitch(view)
+                lightbulb.flickLightSwitch(context, view)
             }
-            lightbulb.updateState(view)
+            lightbulb.updateState(context, view)
 
             return view
         }

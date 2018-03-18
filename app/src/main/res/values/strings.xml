@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">LightDefy</string>
+    <string name="ok">OK</string>
+    <string name="turn_off">Turn Off</string>
+    <string name="turn_on">Turn On</string>
+    <string name="change_name_of">Change name of</string>
+    <string name="cancel">Cancel</string>
 </resources>

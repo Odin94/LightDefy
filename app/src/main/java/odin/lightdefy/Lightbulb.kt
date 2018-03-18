@@ -1,5 +1,6 @@
 package odin.lightdefy
 
+import android.content.Context
 import android.view.View
 import kotlinx.android.synthetic.main.lightbulb_list_elem.view.*
 
@@ -17,15 +18,20 @@ class Lightbulb(var name: String, var on: Boolean, var connected: Boolean) {
         )
     }
 
-    fun flickLightSwitch(view: View) {
+    fun flickLightSwitch(context: Context, view: View) {
         // TODO: make http request to light and call the rest of this function in a callback
 
         on = !on
-        updateState(view)
+        updateState(context, view)
     }
 
-    fun updateState(view: View) {
-        view.lightSwitch.text = if (on) "Turn Off" else "Turn On"
+    fun updateState(context: Context, view: View) {
+        view.lightSwitch.text =
+                if (on)
+                    context.getString(R.string.turn_off)
+                else
+                    context.getString(R.string.turn_on)
+
         val bulbImage = Lightbulb.imageMap[Pair(on, connected)]
         view.bulb_image.setImageResource(bulbImage!!)
         view.name.text = name

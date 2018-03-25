@@ -4,11 +4,10 @@ import android.content.Context
 import android.view.View
 import kotlinx.android.synthetic.main.lightbulb_list_elem.view.*
 
-// TODO: put image assets in here? Maybe a map of status -> image?
 
-class Lightbulb(var name: String, var on: Boolean, var connected: Boolean) {
+class Lightbulb(var name: String, private var onOff: Boolean, private var connected: Boolean) {
     companion object {
-        // Pair(onOff, connected)
+        // Pair(onOff: bool, connected: bool)
         val imageMap: Map<Pair<Boolean, Boolean>, Int> = mapOf(
                 Pair(true, true) to R.drawable.light_on,
                 Pair(false, true) to R.drawable.light_off,
@@ -21,18 +20,18 @@ class Lightbulb(var name: String, var on: Boolean, var connected: Boolean) {
     fun flickLightSwitch(context: Context, view: View) {
         // TODO: make http request to light and call the rest of this function in a callback
 
-        on = !on
+        onOff = !onOff
         updateState(context, view)
     }
 
     fun updateState(context: Context, view: View) {
         view.lightSwitch.text =
-                if (on)
+                if (onOff)
                     context.getString(R.string.turn_off)
                 else
                     context.getString(R.string.turn_on)
 
-        val bulbImage = Lightbulb.imageMap[Pair(on, connected)]
+        val bulbImage = Lightbulb.imageMap[Pair(onOff, connected)]
         view.bulb_image.setImageResource(bulbImage!!)
         view.name.text = name
     }

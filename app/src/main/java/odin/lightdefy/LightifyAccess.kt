@@ -4,11 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.ResponseDeserializable
 import com.github.kittinunf.fuel.httpGet
-import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+import org.json.JSONObject
 
 
 object LightifyAccess {
@@ -28,28 +31,27 @@ object LightifyAccess {
     private const val APIVersion = "v4"
     private const val APIDevices = "devices"
 
-    public var tokens: Any? = null
+    var tokens: Map<String, Any>? = null
 
     init {
-        webserviceUrl.httpPost().responseObject(TokenResponseData.Deserializer()) { req, resp, result ->
+        // TODO: test if this works (it should)
+        val postBodyJson = JSONObject();
+        postBodyJson.put("secret", "seals_are_cute")
+
+        Fuel.post(webserviceUrl).header("Content-Type" to "application/json").body(postBodyJson.toString()).responseString { req, resp, result ->
             when (result) {
                 is Result.Failure -> {
                     val ex = result.getException()
-                    Log.e(this.TAG, ex.toString())
+                    Log.e(this.TAG + "1", ex.toString())
                     // TODO: handle connection error (display offline warning or sth?)
                 }
                 is Result.Success -> {
-                    val (data, err) = result
-                    Log.e(this.TAG, data.toString())
-
-                    if (data?.err != null) {
-                        Log.e(this.TAG, err.toString())
-                        // TODO: tell HomeActivity to authorize?
-                    } else {
-                        this.tokens = data
-                        getDevices {
-                            Log.e(this.TAG, it.toString())
-                        }
+                    val gson = GsonBuilder().setPrettyPrinting().create()
+                    val data: Map<String, Any> = gson.fromJson(result.get(), object : TypeToken<Map<String, Any>>() {}.type)
+                    Log.e(this.TAG + "2", data.toString())
+                    this.tokens = gson.fromJson(data["tokens"].toString(), object : TypeToken<Map<String, Any>>() {}.type)
+                    getDevices {
+                        Log.e(this.TAG + "3", it.toString())
                     }
                 }
             }
@@ -61,12 +63,12 @@ object LightifyAccess {
             when (result) {
                 is Result.Failure -> {
                     val ex = result.getException()
-                    Log.e(this.TAG, ex.toString())
+                    Log.e(this.TAG + "4", ex.toString())
                     // TODO: handle connection error (display offline warning or sth?)
                 }
                 is Result.Success -> {
                     val data = result.get()
-                    Log.e(this.TAG, data)
+                    Log.e(this.TAG + "5", data)
 
                     callback(data)
                 }

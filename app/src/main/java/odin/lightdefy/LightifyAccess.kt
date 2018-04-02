@@ -10,6 +10,7 @@ import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import khttp.patch  // Fuel doesn't do proper patch requests (they're post with an extra header) so we need this
 import org.json.JSONObject
 
 
@@ -33,7 +34,6 @@ object LightifyAccess {
     var tokens: Map<String, Any>? = null
 
     init {
-        // TODO: test if this works (it should)
         val postBodyJson = JSONObject()
         postBodyJson.put("secret", "seals_are_cute")
 
@@ -53,12 +53,14 @@ object LightifyAccess {
                             this.tokens = gson.fromJson(data["tokens"].toString(), object : TypeToken<Map<String, Any>>() {}.type)
                             getDevices {
                                 Log.e(this.TAG + "3", it.toString())
+                                this.switchLight()
                             }
                         }
                     }
                 }
     }
 
+    // TODO: make this write the lightbulb list and update the interface
     fun getDevices(callback: (Any) -> Unit) {
         if (this.tokens?.containsKey("access_token") == true)
             Fuel.get("${this.APIUrl}/${this.APIVersion}/${this.APIDevices}")
@@ -82,6 +84,29 @@ object LightifyAccess {
                         }
                     }
     }
+
+    // TODO: make this take a lightbulb object
+    fun switchLight() {
+        val andi_03_id = "201332114-d06"
+
+        val postBodyJson = JSONObject()
+        postBodyJson.put("onOff", "off")
+
+        val path = "${this.APIUrl}/${this.APIVersion}/${this.APIDevices}/$andi_03_id"
+        /*    Fuel.get(path)
+                    .header("Authorization" to "Bearer ${this.tokens!!["access_token"]}")
+                    .responseString { req, resp, result ->
+                        Log.e(this.TAG, result.toString())
+                    }*/
+
+        val payload = mapOf("onOff" to "on")
+        val headers = mapOf("Authorization" to "Bearer ${this.tokens!!["access_token"]}")
+        Thread {
+            val r = patch(path, headers = headers, json = JSONObject(payload))
+            Log.e(this.TAG + "55", r.text)
+        }.start()
+    }
+
 
     fun authorize(context: Context) {
         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(this.authUrl))

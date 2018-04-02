@@ -6,7 +6,6 @@ import android.net.Uri
 import android.util.Log
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -35,45 +34,53 @@ object LightifyAccess {
 
     init {
         // TODO: test if this works (it should)
-        val postBodyJson = JSONObject();
+        val postBodyJson = JSONObject()
         postBodyJson.put("secret", "seals_are_cute")
 
-        Fuel.post(webserviceUrl).header("Content-Type" to "application/json").body(postBodyJson.toString()).responseString { req, resp, result ->
-            when (result) {
-                is Result.Failure -> {
-                    val ex = result.getException()
-                    Log.e(this.TAG + "1", ex.toString())
-                    // TODO: handle connection error (display offline warning or sth?)
-                }
-                is Result.Success -> {
-                    val gson = GsonBuilder().setPrettyPrinting().create()
-                    val data: Map<String, Any> = gson.fromJson(result.get(), object : TypeToken<Map<String, Any>>() {}.type)
-                    Log.e(this.TAG + "2", data.toString())
-                    this.tokens = gson.fromJson(data["tokens"].toString(), object : TypeToken<Map<String, Any>>() {}.type)
-                    getDevices {
-                        Log.e(this.TAG + "3", it.toString())
+        Fuel.post(webserviceUrl).header("Content-Type" to "application/json")
+                .body(postBodyJson.toString())
+                .responseString { req, resp, result ->
+                    when (result) {
+                        is Result.Failure -> {
+                            val ex = result.getException()
+                            Log.e(this.TAG + "1", ex.toString())
+                            // TODO: handle connection error (display offline warning or sth?)
+                        }
+                        is Result.Success -> {
+                            val gson = GsonBuilder().setPrettyPrinting().create()
+                            val data: Map<String, Any> = gson.fromJson(result.get(), object : TypeToken<Map<String, Any>>() {}.type)
+                            Log.e(this.TAG + "2", data.toString())
+                            this.tokens = gson.fromJson(data["tokens"].toString(), object : TypeToken<Map<String, Any>>() {}.type)
+                            getDevices {
+                                Log.e(this.TAG + "3", it.toString())
+                            }
+                        }
                     }
                 }
-            }
-        }
     }
 
     fun getDevices(callback: (Any) -> Unit) {
-        "${this.APIUrl}/${this.APIVersion}/${this.APIDevices}".httpGet().responseString { req, resp, result ->
-            when (result) {
-                is Result.Failure -> {
-                    val ex = result.getException()
-                    Log.e(this.TAG + "4", ex.toString())
-                    // TODO: handle connection error (display offline warning or sth?)
-                }
-                is Result.Success -> {
-                    val data = result.get()
-                    Log.e(this.TAG + "5", data)
+        if (this.tokens?.containsKey("access_token") == true)
+            Fuel.get("${this.APIUrl}/${this.APIVersion}/${this.APIDevices}")
+                    .header("Authorization" to "Bearer ${this.tokens!!["access_token"]}")
+                    .responseString { req, resp, result ->
+                        Log.wtf(this.TAG + "___", req.headers.toString())
+                        Log.wtf("NOTICE ME SENPAI", "pls")
+                        when (result) {
+                            is Result.Failure -> {
+                                val ex = result.getException()
+                                Log.e(this.TAG + "4", ex.toString())
+                                callback(ex)
+                                // TODO: handle connection error (display offline warning or sth?)
+                            }
+                            is Result.Success -> {
+                                val data = result.get()
+                                Log.e(this.TAG + "5", data)
 
-                    callback(data)
-                }
-            }
-        }
+                                callback(data)
+                            }
+                        }
+                    }
     }
 
     fun authorize(context: Context) {

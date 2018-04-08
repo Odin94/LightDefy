@@ -33,7 +33,7 @@ object LightifyAccess {
 
     var tokens: Map<String, Any>? = null
 
-    init {
+    fun getTokens(onSuccess: (() -> Unit)? = null, onError: (() -> Unit)? = null) {
         val postBodyJson = JSONObject()
         postBodyJson.put("secret", "seals_are_cute")
 
@@ -44,16 +44,23 @@ object LightifyAccess {
                         is Result.Failure -> {
                             val ex = result.getException()
                             Log.e(this.TAG + "1", ex.toString())
-                            // TODO: handle connection error (display offline warning or sth?)
+
+                            onError?.let {
+                                onError()
+                            }
                         }
                         is Result.Success -> {
                             val gson = GsonBuilder().setPrettyPrinting().create()
                             val data: Map<String, Any> = gson.fromJson(result.get(), object : TypeToken<Map<String, Any>>() {}.type)
                             Log.e(this.TAG + "2", data.toString())
                             this.tokens = gson.fromJson(data["tokens"].toString(), object : TypeToken<Map<String, Any>>() {}.type)
-                            getDevices {
-                                Log.e(this.TAG + "3", it.toString())
-                                this.switchLight()
+//                            this.getDevices({
+//                                Log.e(this.TAG + "3", it.toString())
+//                                this.switchLight()
+//                            })
+
+                            onSuccess?.let {
+                                onSuccess()
                             }
                         }
                     }
@@ -61,28 +68,40 @@ object LightifyAccess {
     }
 
     // TODO: make this write the lightbulb list and update the interface
-    fun getDevices(callback: (Any) -> Unit) {
+    fun getDevices(onSuccess: (List<Map<String, String>>) -> Unit, onError: ((Any) -> Unit)? = null) {
         if (this.tokens?.containsKey("access_token") == true)
             Fuel.get("${this.APIUrl}/${this.APIVersion}/${this.APIDevices}")
                     .header("Authorization" to "Bearer ${this.tokens!!["access_token"]}")
-                    .responseString { req, resp, result ->
-                        Log.wtf(this.TAG + "___", req.headers.toString())
-                        Log.wtf("NOTICE ME SENPAI", "pls")
+                    .responseString { _, _, result ->
                         when (result) {
                             is Result.Failure -> {
                                 val ex = result.getException()
                                 Log.e(this.TAG + "4", ex.toString())
-                                callback(ex)
-                                // TODO: handle connection error (display offline warning or sth?)
+                                onError?.let {
+                                    onError(ex)
+                                }
                             }
                             is Result.Success -> {
                                 val data = result.get()
                                 Log.e(this.TAG + "5", data)
+                                val gson = GsonBuilder().setPrettyPrinting().create()
 
-                                callback(data)
+                                // data is a formed like {devices:[{id: x, ...}, ...]}
+                                val devices: List<Map<String, String>>? =
+                                        (gson.fromJson(data, object : TypeToken<Map<String, Any>>() {}.type)
+                                                as Map<String, List<Map<String, String>>>)["devices"]
+
+                                if (devices != null) {
+                                    onSuccess(devices)
+                                } else {
+                                    if (onError != null)
+                                        onError("Response data doesn't seem to contain devices: $data")
+                                }
                             }
                         }
                     }
+        else
+            Log.e(this.TAG, "Tried to getDevices without having access token!")
     }
 
     // TODO: make this take a lightbulb object

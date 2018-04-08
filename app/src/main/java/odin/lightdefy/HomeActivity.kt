@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Paint
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -22,7 +23,7 @@ class HomeActivity : AppCompatActivity() {
         private const val TAG = "HomeActivity"
     }
 
-    private val lightbulbs = mutableListOf<Lightbulb>()
+    private var lightbulbs = mutableListOf<Lightbulb>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,20 +31,38 @@ class HomeActivity : AppCompatActivity() {
 
         setupPermissions()
 
-        val authUrl = LightifyAccess.getAuthUrl()
-
-        lightbulbs.add(Lightbulb("Lightbulb 1 (lightOn, con)", true, true))
-        lightbulbs.add(Lightbulb("Lightbulb 2 (lightOn, disc)", true, false))
-        lightbulbs.add(Lightbulb("Lightbulb 3 (off, con)", false, true))
-        lightbulbs.add(Lightbulb(authUrl, false, true))
-
-
         val lightbulbsListView = findViewById<ListView>(R.id.lightbulbListView)
         lightbulbsListView.adapter = LightbulbAdapter(this, lightbulbs)
 
-        if (LightifyAccess.tokens == null) {
-            LightifyAccess.authorize(this)
-        }
+        LightifyAccess.getTokens({
+            this.getDevices()
+
+            if (LightifyAccess.tokens == null) {
+                LightifyAccess.authorize(this)
+            }
+        })
+    }
+
+    private fun getDevices() {
+        LightifyAccess.getDevices({
+            val newLightbulbs = mutableListOf<Lightbulb>()
+            it.forEach { value: Map<String, String> ->
+                Log.wtf(HomeActivity.TAG + " value", value::class.simpleName + " " + value.toString())
+                val newLightbulb = Lightbulb.fromMap(value)
+
+                if (newLightbulb != null) newLightbulbs.add(newLightbulb)
+            }
+
+            this.lightbulbs = newLightbulbs
+            val lightbulbsListView = findViewById<ListView>(R.id.lightbulbListView)
+            lightbulbsListView.adapter = LightbulbAdapter(this, lightbulbs)
+        }, {
+            // TODO: display disconnected-symbol or sth
+            Log.wtf(HomeActivity.TAG + " getDevices failed!", it.toString())
+            Handler().postDelayed({
+                this.getDevices()
+            }, 3000)
+        })
     }
 
     private fun setupPermissions() {

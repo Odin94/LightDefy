@@ -16,6 +16,7 @@ import android.widget.BaseAdapter
 import android.widget.ListView
 import android.widget.TextView
 import kotlinx.android.synthetic.main.lightbulb_list_elem.view.*
+import kotlin.properties.Delegates
 
 
 class HomeActivity : AppCompatActivity() {
@@ -23,7 +24,20 @@ class HomeActivity : AppCompatActivity() {
         private const val TAG = "HomeActivity"
     }
 
-    private var lightbulbs = mutableListOf<Lightbulb>()
+    // automatically update view when lightbulbs is changed
+    private var lightbulbs: MutableList<Lightbulb> by Delegates.observable(mutableListOf()) { property, oldValue, newValue ->
+        this.updateLightbulbsView()
+    }
+
+    fun updateLightbulbsView(newLightbulbs: MutableList<Lightbulb>? = null) {
+        if (newLightbulbs != null)
+            this.lightbulbs = newLightbulbs
+        else
+            runOnUiThread {
+                val lightbulbsListView = findViewById<ListView>(R.id.lightbulbListView)
+                lightbulbsListView.adapter = LightbulbAdapter(this, lightbulbs)
+            }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,8 +45,10 @@ class HomeActivity : AppCompatActivity() {
 
         setupPermissions()
 
-        val lightbulbsListView = findViewById<ListView>(R.id.lightbulbListView)
-        lightbulbsListView.adapter = LightbulbAdapter(this, lightbulbs)
+        runOnUiThread {
+            val lightbulbsListView = findViewById<ListView>(R.id.lightbulbListView)
+            lightbulbsListView.adapter = LightbulbAdapter(this, lightbulbs)
+        }
 
         LightifyAccess.getTokens({
             this.getDevices()
@@ -54,8 +70,6 @@ class HomeActivity : AppCompatActivity() {
             }
 
             this.lightbulbs = newLightbulbs
-            val lightbulbsListView = findViewById<ListView>(R.id.lightbulbListView)
-            lightbulbsListView.adapter = LightbulbAdapter(this, lightbulbs)
         }, {
             // TODO: display disconnected-symbol or sth
             Log.wtf(HomeActivity.TAG + " getDevices failed!", it.toString())
@@ -84,14 +98,25 @@ class HomeActivity : AppCompatActivity() {
             nameTextView.paintFlags = nameTextView.paintFlags or Paint.UNDERLINE_TEXT_FLAG
 
             view.name.setOnLongClickListener {
-                getNameChangeDialog(context, lightbulb, view).show()
+                getNameChangeDialog(context, lightbulb).show()
                 true
             }
 
             view.lightSwitch.setOnClickListener {
-                lightbulb.flickLightSwitch(context, view)
+                lightbulb.flickLightSwitch(context, view, {
+                    (context as? HomeActivity)?.updateLightbulbsView()
+                })
             }
-            lightbulb.updateState(context, view)
+
+            view.lightSwitch.text =
+                    if (lightbulb.onOff == "on")
+                        context.getString(R.string.turn_off)
+                    else
+                        context.getString(R.string.turn_on)
+
+            val bulbImage = Lightbulb.imageMap[Pair(lightbulb.onOff, lightbulb.online)]
+            view.bulb_image.setImageResource(bulbImage!!)
+            view.name.text = lightbulb.name
 
             return view
         }

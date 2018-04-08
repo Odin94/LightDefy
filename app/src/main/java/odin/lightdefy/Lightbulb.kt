@@ -2,10 +2,9 @@ package odin.lightdefy
 
 import android.content.Context
 import android.view.View
-import kotlinx.android.synthetic.main.lightbulb_list_elem.view.*
 
 
-class Lightbulb(val id: String, var name: String, private var onOff: String, private var online: Boolean,
+class Lightbulb(val id: String, var name: String, var onOff: String, var online: Boolean,
                 val brightness: Int? = null, var colorTemperature: Int? = null, colorRGBW: RGBW? = null,
                 var colorHSV: HSV? = null, var mode: String? = null, var deviceModel: String? = null,
                 val firmwareVersion: String? = null) {
@@ -34,23 +33,11 @@ class Lightbulb(val id: String, var name: String, private var onOff: String, pri
         }
     }
 
-    fun flickLightSwitch(context: Context, view: View) {
-        // TODO: make http request to light and call the rest of this function in a callback
-
-        this.onOff = this.invertOnOff(onOff)
-        updateState(context, view)
-    }
-
-    fun updateState(context: Context, view: View) {
-        view.lightSwitch.text =
-                if (this.onOff == "on")
-                    context.getString(R.string.turn_off)
-                else
-                    context.getString(R.string.turn_on)
-
-        val bulbImage = Lightbulb.imageMap[Pair(this.onOff, this.online)]
-        view.bulb_image.setImageResource(bulbImage!!)
-        view.name.text = this.name
+    fun flickLightSwitch(context: Context, view: View, onSuccess: (() -> Unit)? = null) {
+        LightifyAccess.switchLight(this.id, this.invertOnOff(this.onOff), {
+            this.onOff = this.invertOnOff(onOff)
+            if (onSuccess != null) onSuccess()
+        })
     }
 
     private fun invertOnOff(onOff: String): String {

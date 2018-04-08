@@ -104,26 +104,25 @@ object LightifyAccess {
             Log.e(this.TAG, "Tried to getDevices without having access token!")
     }
 
-    // TODO: make this take a lightbulb object
-    fun switchLight() {
-        val andi_03_id = "201332114-d06"
+    fun switchLight(id: String, targetOnOff: String, onSuccess: (() -> Unit)?) {
+        if (this.tokens?.containsKey("access_token") == true) {
+            val postBodyJson = JSONObject()
+            postBodyJson.put("onOff", targetOnOff)
 
-        val postBodyJson = JSONObject()
-        postBodyJson.put("onOff", "off")
+            val path = "${this.APIUrl}/${this.APIVersion}/${this.APIDevices}/$id"
+            val payload = mapOf("onOff" to targetOnOff)
+            val headers = mapOf("Authorization" to "Bearer ${this.tokens!!["access_token"]}")
+            Thread {
+                // using different http library cause Fuel doesn't support real patch requests
+                val r = patch(path, headers = headers, json = JSONObject(payload))
 
-        val path = "${this.APIUrl}/${this.APIVersion}/${this.APIDevices}/$andi_03_id"
-        /*    Fuel.get(path)
-                    .header("Authorization" to "Bearer ${this.tokens!!["access_token"]}")
-                    .responseString { req, resp, result ->
-                        Log.e(this.TAG, result.toString())
-                    }*/
-
-        val payload = mapOf("onOff" to "on")
-        val headers = mapOf("Authorization" to "Bearer ${this.tokens!!["access_token"]}")
-        Thread {
-            val r = patch(path, headers = headers, json = JSONObject(payload))
-            Log.e(this.TAG + "55", r.text)
-        }.start()
+                val httpStatusSuccess = 200
+                if (r.statusCode == httpStatusSuccess && onSuccess != null) onSuccess()
+            }.start()
+        }
+        else {
+            Log.e(this.TAG, "Error: Attempting to switch light onOff without access token!")
+        }
     }
 
 

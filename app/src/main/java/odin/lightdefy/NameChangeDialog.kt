@@ -2,11 +2,10 @@ package odin.lightdefy
 
 import android.app.AlertDialog
 import android.content.Context
-import android.view.View
 import android.widget.EditText
 
 
-fun getNameChangeDialog(context: Context, lightbulb: Lightbulb, lightbulbView: View): AlertDialog.Builder {
+fun getNameChangeDialog(context: Context, lightbulb: Lightbulb): AlertDialog.Builder {
     val builder = AlertDialog.Builder(context)
 
     // set up input
@@ -19,7 +18,7 @@ fun getNameChangeDialog(context: Context, lightbulb: Lightbulb, lightbulbView: V
                 dialog.dismiss()
                 if (input.text.toString().trim().isNotEmpty()) {
                     lightbulb.name = input.text.toString()
-                    lightbulb.updateState(context, lightbulbView)
+                    (context as? HomeActivity)?.updateLightbulbsView()
                 }
             })
             .setNegativeButton(context.getString(R.string.cancel), { dialog, _ ->

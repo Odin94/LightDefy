@@ -8,3 +8,6 @@
 /captures
 .externalNativeBuild
 *.ignore
+*.key
+**/password.xml
+\app\src\main\res\values\password.xml

@@ -45,6 +45,9 @@ class HomeActivity : AppCompatActivity() {
 
         setupPermissions()
 
+        val password = getString(R.string.password)
+        LightifyAccess.password = password
+
         runOnUiThread {
             val lightbulbsListView = findViewById<ListView>(R.id.lightbulbListView)
             lightbulbsListView.adapter = LightbulbAdapter(this, lightbulbs)

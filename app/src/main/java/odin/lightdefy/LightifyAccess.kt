@@ -10,12 +10,21 @@ import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import khttp.patch  // Fuel doesn't do proper patch requests (they're post with an extra header) so we need this
+import khttp.patch
 import org.json.JSONObject
 
 
 object LightifyAccess {
     private const val TAG = "LightifyAccess"
+
+    private var _password: String? = null
+    var password: String
+        get() {
+            return _password ?: throw Exception("Trying to access password before it was set!")
+        }
+        set(value) {
+            _password = value
+        }
 
     private const val clientId = "25b397ad-b153-4aa8-afae-ff260e86a756"
     private const val clientSecret = "4aec927d33a9207dd65e647c1d6c66defbff28d8"
@@ -50,14 +59,20 @@ object LightifyAccess {
                             }
                         }
                         is Result.Success -> {
-                            val gson = GsonBuilder().setPrettyPrinting().create()
-                            val data: Map<String, Any> = gson.fromJson(result.get(), object : TypeToken<Map<String, Any>>() {}.type)
-                            Log.e(this.TAG + "2", data.toString())
-                            this.tokens = gson.fromJson(data["tokens"].toString(), object : TypeToken<Map<String, Any>>() {}.type)
-//                            this.getDevices({
-//                                Log.e(this.TAG + "3", it.toString())
-//                                this.switchLight()
-//                            })
+                            Log.e("CRYPTO", result.get())
+                            try {
+                                val gson = GsonBuilder().setPrettyPrinting().create()
+                                val data: Map<String, Any> = gson.fromJson(result.get(), object : TypeToken<Map<String, Any>>() {}.type)
+                                Log.e(this.TAG + "2", data.toString())
+                                this.tokens = gson.fromJson(decrypt(data["tokens"].toString(), password), object : TypeToken<Map<String, Any>>() {}.type)
+                            } catch (ex: Exception) {
+                                Log.e(this.TAG + "9", ex.toString())
+                                Log.e(this.TAG + "10", result.get())
+
+                                onError?.let {
+                                    onError()
+                                }
+                            }
 
                             onSuccess?.let {
                                 onSuccess()
@@ -119,8 +134,7 @@ object LightifyAccess {
                 val httpStatusSuccess = 200
                 if (r.statusCode == httpStatusSuccess && onSuccess != null) onSuccess()
             }.start()
-        }
-        else {
+        } else {
             Log.e(this.TAG, "Error: Attempting to switch light onOff without access token!")
         }
     }
